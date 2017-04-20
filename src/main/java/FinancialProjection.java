@@ -3,7 +3,12 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.commons.lang3.StringUtils;
 import processing.core.PApplet;
 import processing.core.PShape;
+import processing.net.Client;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,15 +25,20 @@ public class FinancialProjection extends PApplet {
     private int calibrationSpeed = 1;
     private float SCALE = 1.0f;
     private float CLOCK_RADIUS = 150;
-    private float CLOCK_CENTER_RADIUS = 25;
+    private float CLOCK_CENTER_RADIUS = 50;
     private float DAY_ROTATION = TWO_PI/30;
 
     private static FinancialData finData;
 
+    // Network communication
+    private Client client;
+    private float serverAvailabilityTimer = millis();
+    private float reconnectTimer = millis();
+
     // Text and animation
     private List<String> finDataTextList;
     private int textTransparency = 1;
-    private int fadingSpeed = 5; // Fading speed
+    private int fadingSpeed = 3; // Fading speed
     private int transactionNumber = 0; // Transaction being inspected
     private int dayOfMonth;
     private boolean displayDayMsg = true;
@@ -40,6 +50,8 @@ public class FinancialProjection extends PApplet {
     public static void main(String[] args) {
         if(args.length > 0) {
 
+            // TODO: Create separate method in order to request data continuously
+
             int disposableIncome = Integer.parseInt(args[0]);
             String csv = "";
 
@@ -48,7 +60,7 @@ public class FinancialProjection extends PApplet {
                         .header("Accept", "text/csv")
                         .asString().getBody();
             } catch (UnirestException e) {
-                e.printStackTrace();
+                // Potentially retry connection?
             }
 
             finData = new FinancialData(disposableIncome, csv);
@@ -63,9 +75,13 @@ public class FinancialProjection extends PApplet {
     }
 
     public void setup() {
+        // Init network communication
+        System.out.println("Init tcp client");
+        client = new Client(this, "192.168.43.60", 1337);
+
         // Create custom line that represents one day
-        stroke(128);
-        strokeWeight(0.5f);
+        stroke(255);
+        strokeWeight(1f);
         dayLine = createShape();
         dayLine.beginShape();
         dayLine.vertex(0, 0);
@@ -82,11 +98,50 @@ public class FinancialProjection extends PApplet {
     }
 
     public void draw() {
+        if (client.available() > 0) {
+            String response = client.readString();
+            System.out.print(response);
+
+            if (response.contains("ping")) {
+                // Reset reconnect timer
+                System.out.println("Reset reconnect timer");
+                reconnectTimer = millis();
+            }
+        }
+
+        if (millis() - reconnectTimer > 15000) {
+            System.out.println("Init new connection");
+            client.dispose();
+            Socket s = null;
+            try {
+                SocketAddress sa = new InetSocketAddress("192.168.43.60", 1337);
+                s = new Socket();
+                s.connect(sa, 1500);
+                client = new Client(this, s);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            reconnectTimer = millis();
+        }
+
+        pingServer();
+
         background(0);
         drawDayLines(30);
         drawSpendingGraphic(spendingLines);
         drawCenter();
         drawCenterText();
+    }
+
+    // Ping server every x milliseconds
+    private void pingServer() {
+        if (!client.active()) return;
+
+        if (millis() - serverAvailabilityTimer > 5000) {
+            client.write("ping");
+            serverAvailabilityTimer = millis();
+            System.out.println("Pinging server");
+        }
     }
 
     private void drawCenterText() {
@@ -95,7 +150,7 @@ public class FinancialProjection extends PApplet {
         if (dayOfMonth == 0) return;
 
         // Set text options
-        textSize(6 * SCALE);
+        textSize(10 * SCALE);
         textAlign(CENTER);
 
         if (displayDayMsg) {
@@ -158,7 +213,7 @@ public class FinancialProjection extends PApplet {
     }
 
     private void drawCenter() {
-        stroke(128);
+        stroke(0);
         fill(255, 255, 255);
         pushMatrix();
         translate(centerPositionX, centerPositionY);
