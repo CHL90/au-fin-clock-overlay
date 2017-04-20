@@ -24,9 +24,9 @@ public class FinancialProjection extends PApplet {
     private final int CALIBRATION_SPEED_LOW = 2;
     private int calibrationSpeed = 1;
     private float SCALE = 1.0f;
-    private float CLOCK_RADIUS = 150;
-    private float CLOCK_CENTER_RADIUS = 50;
-    private float DAY_ROTATION = TWO_PI/30;
+    public static float CLOCK_RADIUS = 150;
+    public static float CLOCK_CENTER_RADIUS = 50;
+    public static float DAY_ROTATION = TWO_PI/30;
 
     private static FinancialData finData;
 
@@ -76,21 +76,18 @@ public class FinancialProjection extends PApplet {
 
     public void setup() {
         // Init network communication
-        System.out.println("Init tcp client");
-        client = new Client(this, "192.168.43.60", 1337);
+        //System.out.println("Init tcp client");
+        //client = new Client(this, "192.168.43.60", 1337);
 
         // Create custom line that represents one day
         stroke(255);
         strokeWeight(1f);
         dayLine = createShape();
-        dayLine.beginShape();
-        dayLine.vertex(0, 0);
-        dayLine.vertex(0, -CLOCK_RADIUS);
-        dayLine.endShape();
+        dayLine = Graphics.createDayLine(dayLine);
 
-        // Spending lines graphic
-        fill(255, 255, 255);
-        spendingLines = createSpendingGraphic(finData);
+        // Draw graphics into spending lines shape
+        spendingLines = createShape();
+        spendingLines = Graphics.createSpendingGraphic(finData, spendingLines);
 
         /* This method should be called by the clock to update the text displayed in the center. Default 0 to display
            nothing on start up. */
@@ -98,7 +95,7 @@ public class FinancialProjection extends PApplet {
     }
 
     public void draw() {
-        if (client.available() > 0) {
+        /*if (client.available() > 0) {
             String response = client.readString();
             System.out.print(response);
 
@@ -124,11 +121,11 @@ public class FinancialProjection extends PApplet {
             reconnectTimer = millis();
         }
 
-        pingServer();
+        pingServer();*/
 
         background(0);
         drawDayLines(30);
-        drawSpendingGraphic(spendingLines);
+        drawSpendingGraphic();
         drawCenter();
         drawCenterText();
     }
@@ -233,69 +230,13 @@ public class FinancialProjection extends PApplet {
         }
     }
 
-    private void drawSpendingGraphic(PShape spendingGraphic) {
+    private void drawSpendingGraphic() {
+        fill(255, 255, 255);
         pushMatrix();
         translate(centerPositionX, centerPositionY);
         scale(SCALE);
-        shape(spendingGraphic);
+        shape(spendingLines);
         popMatrix();
-    }
-
-    private PShape createSpendingGraphic(FinancialData financialData) {
-
-        int disposableIncome = financialData.getDisposableIncome();
-        int dayOfMonth = LocalDate.now().getDayOfMonth();
-        List<FinancialData.DataEntry> finDataList = financialData.getFinancialDataList();
-
-        // Initialize points list with center point
-        ArrayList<Point> points = new ArrayList<>();
-        points.add(new Point(0, 0));
-        // Keep track of spending position. Center radius equals no spending while clock radius equals entire disposable income spent
-        float spendingPosition = -CLOCK_CENTER_RADIUS;
-
-        for (int i = 1; i <= dayOfMonth + 1; i++) {
-            float dailySpending = 0;
-
-            // Calculate amount spent on a given day
-            for (FinancialData.DataEntry entry : finDataList) {
-                if (Integer.parseInt(entry.getDate().split("\\.")[0]) == i) {
-                    dailySpending += entry.getAmount();
-                }
-            }
-
-            // Add points in relation to spending. When there is no daily spending just rotate current point.
-            // When there is daily spending rotate current point and add another point further out according to spending
-            if (dailySpending == 0) {
-                Point currentSP = rotate2d(new Point(0, spendingPosition), (i - 1) * DAY_ROTATION);
-                points.add(currentSP);
-            } else {
-                Point currentSP = rotate2d(new Point(0, spendingPosition), (i - 1) * DAY_ROTATION);
-                spendingPosition += dailySpending / disposableIncome * (CLOCK_RADIUS - CLOCK_CENTER_RADIUS);
-                Point newSP = rotate2d(new Point(0, spendingPosition), (i - 1) * DAY_ROTATION);
-                points.add(currentSP);
-                points.add(newSP);
-            }
-        }
-
-        PShape spendingLine = createShape();
-        spendingLine.beginShape();
-        for (Point point : points) {
-            spendingLine.vertex(point.x, point.y);
-        }
-        spendingLine.endShape();
-
-        return spendingLine;
-    }
-
-    // Rotate a point around center (0,0)
-    private Point rotate2d(Point p, double rotation) {
-        float newX = (float) (Math.cos(rotation) * p.x - Math.sin(rotation) * p.y);
-        float newY = (float) (Math.sin(rotation) * p.x + Math.cos(rotation) * p.y);
-
-        newX = (float) (Math.round(newX * 100.0) / 100.0);
-        newY = (float) (Math.round(newY * 100.0) / 100.0);
-
-        return new Point(newX, newY);
     }
 
     public void keyPressed() {
@@ -336,13 +277,4 @@ public class FinancialProjection extends PApplet {
         if (keyCode == SHIFT) calibrationSpeed = CALIBRATION_SPEED_LOW;
     }
 
-    private class Point {
-        public float x;
-        public float y;
-
-        public Point(float x, float y) {
-            this.x = x;
-            this.y = y;
-        }
-    }
 }
