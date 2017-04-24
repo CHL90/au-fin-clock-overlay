@@ -1,15 +1,6 @@
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.commons.lang3.StringUtils;
 import processing.core.PApplet;
 import processing.core.PShape;
-import processing.net.Client;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,18 +18,18 @@ public class FinancialProjection extends PApplet {
     public static float CLOCK_RADIUS = 150;
     public static float CLOCK_CENTER_RADIUS = 50;
     public static float DAY_ROTATION = TWO_PI/30;
+    private final int FADING_SPEED = 5;
 
     private static FinancialData finData;
 
     // Network communication
-    private Client client;
-    private float serverAvailabilityTimer = millis();
-    private float reconnectTimer = millis();
+    private String currentCommand;
+    private boolean watchActive = true;
 
     // Text and animation
-    private List<String> finDataTextList;
+    private List<String> finDataTextList = new ArrayList<>();
     private int textTransparency = 1;
-    private int fadingSpeed = 3; // Fading speed
+    private int fade = 3; // Fading speed
     private int transactionNumber = 0; // Transaction being inspected
     private int dayOfMonth;
     private boolean displayDayMsg = true;
@@ -50,18 +41,8 @@ public class FinancialProjection extends PApplet {
     public static void main(String[] args) {
         if(args.length > 0) {
 
-            // TODO: Create separate method in order to request data continuously
-
             int disposableIncome = Integer.parseInt(args[0]);
-            String csv = "";
-
-            try {
-                csv = Unirest.get("http://198.211.106.128:1337/csv/" + args[1] + ".csv")
-                        .header("Accept", "text/csv")
-                        .asString().getBody();
-            } catch (UnirestException e) {
-                // Potentially retry connection?
-            }
+            String csv = Network.getCSVData(args[1]);
 
             finData = new FinancialData(disposableIncome, csv);
 
@@ -75,9 +56,9 @@ public class FinancialProjection extends PApplet {
     }
 
     public void setup() {
-        // Init network communication
-        //System.out.println("Init tcp client");
-        //client = new Client(this, "192.168.43.60", 1337);
+        // Init tcp communication
+        Network.createTCPConnection(this, "192.168.43.60", 1337);
+        Network.initTimers(millis());
 
         // Create custom line that represents one day
         stroke(255);
@@ -95,49 +76,46 @@ public class FinancialProjection extends PApplet {
     }
 
     public void draw() {
-        /*if (client.available() > 0) {
-            String response = client.readString();
-            System.out.print(response);
-
-            if (response.contains("ping")) {
-                // Reset reconnect timer
-                System.out.println("Reset reconnect timer");
-                reconnectTimer = millis();
-            }
-        }
-
-        if (millis() - reconnectTimer > 15000) {
-            System.out.println("Init new connection");
-            client.dispose();
-            Socket s = null;
-            try {
-                SocketAddress sa = new InetSocketAddress("192.168.43.60", 1337);
-                s = new Socket();
-                s.connect(sa, 1500);
-                client = new Client(this, s);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            reconnectTimer = millis();
-        }
-
-        pingServer();*/
-
         background(0);
-        drawDayLines(30);
-        drawSpendingGraphic();
-        drawCenter();
-        drawCenterText();
-    }
 
-    // Ping server every x milliseconds
-    private void pingServer() {
-        if (!client.active()) return;
+        // Read commands from the clock
+        if (Network.isClientAvailable()) {
+            String response = Network.getAvailableString();
+            System.out.println(response);
+            char[] commands = response.toCharArray();
 
-        if (millis() - serverAvailabilityTimer > 5000) {
-            client.write("ping");
-            serverAvailabilityTimer = millis();
-            System.out.println("Pinging server");
+            for (int i = 0; i < commands.length; i++) {
+                if (commands[i] == '#') {
+                    char firstChar = currentCommand.charAt(0);
+                    switch (firstChar) {
+                        case 'P':
+                            System.out.println("Reset reconnect timer");
+                            Network.resetReconnectTimer(millis());
+                            break;
+                        case 'D':
+                            watchActive = true;
+                            int day = Integer.parseInt(currentCommand.substring(1));
+                            setCenterText(day);
+                            break;
+                        case 'H':
+                            watchActive = false;
+
+                    }
+                    currentCommand = "";
+                    continue;
+                }
+                currentCommand += commands[i];
+            }
+        }
+
+        Network.checkTCPConnection(millis(), this);
+        Network.pingServer(millis());
+
+        if (watchActive) {
+            drawDayLines(30);
+            drawSpendingGraphic();
+            drawCenter();
+            drawCenterText();
         }
     }
 
@@ -151,14 +129,12 @@ public class FinancialProjection extends PApplet {
         textAlign(CENTER);
 
         if (displayDayMsg) {
-            // Fade in/out effect
-            if (textTransparency >= 255) {
-                fadingSpeed = -fadingSpeed;
-            }
-            textTransparency += fadingSpeed;
+            // Fade out effect
+            textTransparency += fade;
 
             if (textTransparency <= 0) {
                 displayDayMsg = false;
+                fade = FADING_SPEED;
             }
 
             fill(0, textTransparency);
@@ -167,17 +143,16 @@ public class FinancialProjection extends PApplet {
         }
 
         if (finDataTextList.isEmpty()) {
-            fill(0);
-            text("No Transactions", centerPositionX, centerPositionY);
+            fadeInText("No Transactions");
         } else if (finDataTextList.size() == 1) {
-            fill(0);
-            text(finDataTextList.get(0), centerPositionX, centerPositionY);
+            fadeInText(finDataTextList.get(0));
         } else {
             // Fade in/out effect
+            textTransparency += fade;
+
             if (textTransparency <= 0 || textTransparency >= 255) {
-                fadingSpeed = -fadingSpeed;
+                fade = -fade;
             }
-            textTransparency += fadingSpeed;
 
             if (textTransparency <= 0) {
                 transactionNumber++;
@@ -189,13 +164,19 @@ public class FinancialProjection extends PApplet {
         }
     }
 
+    private void fadeInText(String text) {
+        textTransparency += fade;
+        fill(0, textTransparency);
+        text(text, centerPositionX, centerPositionY);
+    }
+
     private void setCenterText(int dayOfMonth) {
         // Store day of month. Used when drawing center text
         this.dayOfMonth = dayOfMonth;
 
         // Loop through financial data and store text and amount
         List<FinancialData.DataEntry> finDataList = finData.getFinancialDataList();
-        finDataTextList = new ArrayList<>();
+        finDataTextList.clear();
 
         for (FinancialData.DataEntry entry : finDataList) {
             if (Integer.parseInt(entry.getDate().split("\\.")[0]) == dayOfMonth) {
@@ -206,7 +187,9 @@ public class FinancialProjection extends PApplet {
 
         // Reset displayDayMsg and textTransparency when text in center is updated. Allows quick updating without bugs.
         displayDayMsg = true;
-        textTransparency = 1;
+        fade = -FADING_SPEED;
+        textTransparency = 255;
+        transactionNumber = 0;
     }
 
     private void drawCenter() {
