@@ -77,6 +77,7 @@ public class FinancialProjection extends PApplet {
 
     public void draw() {
         background(0);
+        delay(watchActive ? 0 : 500);
 
         // Read commands from the clock
         if (Network.isClientAvailable()) {
