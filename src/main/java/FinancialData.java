@@ -3,8 +3,10 @@ import java.util.List;
 
 public class FinancialData {
 
+    private final long UPDATE_DATA_INTERVAL = 30000;
     private int disposableIncome;
     private List<DataEntry> financialData = new ArrayList<>();
+    private long updateDataTimer = System.currentTimeMillis();
 
     public FinancialData(int disposableIncome, String csvData) {
 
@@ -25,6 +27,15 @@ public class FinancialData {
                 String text = entries[1];
                 financialData.add(new DataEntry(date, text, amount));
             }
+        }
+    }
+
+    public void updateCSVData() {
+        if (System.currentTimeMillis() - updateDataTimer > UPDATE_DATA_INTERVAL) {
+            updateDataTimer = System.currentTimeMillis(); // Reset timer
+            String csv = Network.getCSVData("chr-lor");
+            financialData.clear();
+            loadCSVData(csv);
         }
     }
 

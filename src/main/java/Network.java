@@ -47,7 +47,7 @@ public class Network extends PApplet {
     public static void pingServer(int millis) {
         if (!client.active()) return;
 
-        if (millis - serverAvailabilityTimer > 5000) {
+        if (millis - serverAvailabilityTimer > 30000) {
             client.write("ping#");
             serverAvailabilityTimer = millis;
             System.out.println("Pinging server");
@@ -55,7 +55,7 @@ public class Network extends PApplet {
     }
 
     public static void checkTCPConnection(int millis, PApplet parent) {
-        if (millis - reconnectTimer > 15000) {
+        if (millis - reconnectTimer > 90000) {
             System.out.println("Init new connection");
             client.dispose();
             Socket s = null;
@@ -72,11 +72,7 @@ public class Network extends PApplet {
     }
 
     public static String getAvailableString() {
-        String res = "";
-
-        if(isClientAvailable()) res = client.readString();
-
-        return res;
+        return client.readString();
     }
 
     public static boolean isClientAvailable() {
@@ -85,12 +81,6 @@ public class Network extends PApplet {
 
     public static void resetReconnectTimer(int millis) {
         reconnectTimer = millis;
-    }
-
-    public enum CommandType {
-        WEEK,
-        SHOW,
-        CLOSE
     }
 
 }
