@@ -1,5 +1,6 @@
 import org.apache.commons.lang3.StringUtils;
 import processing.core.PApplet;
+import processing.core.PFont;
 import processing.core.PShape;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,16 +8,16 @@ import java.util.List;
 public class FinancialProjection extends PApplet {
 
     // Setup and calibration
-    private final int width = 600;
-    private final int height = 400;
-    private int centerPositionX = width/2;
-    private int centerPositionY = height/2;
+    //private final int width = 600;
+    //private final int height = 400;
+    private int centerPositionX;
+    private int centerPositionY;
     private final int CALIBRATION_SPEED_HIGH = 20;
     private final int CALIBRATION_SPEED_LOW = 2;
     private int calibrationSpeed = 1;
-    private float SCALE = 1.0f;
+    private float SCALE = 2.5f;
     public static float CLOCK_RADIUS = 150;
-    public static float CLOCK_CENTER_RADIUS = 50;
+    public static float CLOCK_CENTER_DIAMETER = 100;
     public static float DAY_ROTATION = TWO_PI/30;
     private final int FADING_SPEED = 5;
 
@@ -25,6 +26,7 @@ public class FinancialProjection extends PApplet {
     // Network communication
     private String currentCommand;
     private boolean watchActive = true;
+    private final boolean ONLINE_MODE = true;
 
     // Text and animation
     private List<String> finDataTextList = new ArrayList<>();
@@ -52,13 +54,19 @@ public class FinancialProjection extends PApplet {
 
     public void settings() {
         fullScreen();
+        centerPositionX = displayWidth/2;
+        centerPositionY = displayHeight/2;
         //size(width, height);
     }
 
     public void setup() {
-        // Init tcp communication
-        Network.createTCPConnection(this, "192.168.43.60", 1337);
-        Network.initTimers(millis());
+        if (ONLINE_MODE) {
+            // Init tcp communication
+            Network.createTCPConnection(this, "192.168.43.60", 1337);
+            Network.initTimers(millis());
+        }
+        PFont merriWeather = createFont("MerriweatherSans-Bold.ttf", 32);
+        textFont(merriWeather);
 
         // Create custom line that represents one day
         stroke(255);
@@ -67,6 +75,9 @@ public class FinancialProjection extends PApplet {
         dayLine = Graphics.createDayLine(dayLine);
 
         // Draw graphics into spending lines shape
+        fill(255, 153, 0, 128);
+        stroke(255, 153, 0);
+        strokeWeight(1f);
         spendingLines = createShape();
         spendingLines = Graphics.createSpendingGraphic(finData, spendingLines);
 
@@ -80,38 +91,40 @@ public class FinancialProjection extends PApplet {
         finData.updateCSVData(); // Check for new csv data
         delay(watchActive ? 0 : 500);
 
-        // Read commands from the clock
-        if (Network.isClientAvailable()) {
-            String response = Network.getAvailableString();
-            System.out.println(response);
-            char[] commands = response.toCharArray();
+        if (ONLINE_MODE) {
+            // Read commands from the clock
+            if (Network.isClientAvailable()) {
+                String response = Network.getAvailableString();
+                System.out.println(response);
+                char[] commands = response.toCharArray();
 
-            for (int i = 0; i < commands.length; i++) {
-                if (commands[i] == '#') {
-                    char firstChar = currentCommand.charAt(0);
-                    switch (firstChar) {
-                        case 'P':
-                            System.out.println("Reset reconnect timer");
-                            Network.resetReconnectTimer(millis());
-                            break;
-                        case 'D':
-                            watchActive = true;
-                            int day = Integer.parseInt(currentCommand.substring(1));
-                            setCenterText(day);
-                            break;
-                        case 'H':
-                            watchActive = false;
+                for (int i = 0; i < commands.length; i++) {
+                    if (commands[i] == '#') {
+                        char firstChar = currentCommand.charAt(0);
+                        switch (firstChar) {
+                            case 'P':
+                                System.out.println("Reset reconnect timer");
+                                Network.resetReconnectTimer(millis());
+                                break;
+                            case 'D':
+                                watchActive = true;
+                                int day = Integer.parseInt(currentCommand.substring(1));
+                                setCenterText(day);
+                                break;
+                            case 'H':
+                                watchActive = false;
 
+                        }
+                        currentCommand = "";
+                        continue;
                     }
-                    currentCommand = "";
-                    continue;
+                    currentCommand += commands[i];
                 }
-                currentCommand += commands[i];
             }
-        }
 
-        Network.checkTCPConnection(millis(), this);
-        Network.pingServer(millis());
+            Network.checkTCPConnection(millis(), this);
+            Network.pingServer(millis());
+        }
 
         if (watchActive) {
             drawDayLines(30);
@@ -127,7 +140,8 @@ public class FinancialProjection extends PApplet {
         if (dayOfMonth == 0) return;
 
         // Set text options
-        textSize(10 * SCALE);
+        textSize(12 * SCALE);
+        fill(255, 255, 255);
         textAlign(CENTER);
 
         if (displayDayMsg) {
@@ -139,7 +153,7 @@ public class FinancialProjection extends PApplet {
                 fade = FADING_SPEED;
             }
 
-            fill(0, textTransparency);
+            fill(255, textTransparency);
             text("Day " + dayOfMonth, centerPositionX, centerPositionY);
             return;
         }
@@ -161,7 +175,7 @@ public class FinancialProjection extends PApplet {
                 transactionNumber = transactionNumber % finDataTextList.size();
             }
 
-            fill(0, textTransparency);
+            fill(255, textTransparency);
             text(finDataTextList.get(transactionNumber), centerPositionX, centerPositionY);
         }
     }
@@ -195,17 +209,18 @@ public class FinancialProjection extends PApplet {
     }
 
     private void drawCenter() {
-        stroke(0);
-        fill(255, 255, 255);
+        stroke(255);
+        strokeWeight(2f);
+        fill(0, 0, 0);
         pushMatrix();
         translate(centerPositionX, centerPositionY);
         scale(SCALE);
-        ellipse(0, 0, CLOCK_CENTER_RADIUS * 2, CLOCK_CENTER_RADIUS * 2);
+        ellipse(0, 0, CLOCK_CENTER_DIAMETER, CLOCK_CENTER_DIAMETER);
         popMatrix();
     }
 
     private void drawDayLines(int dayOfMonth) {
-        for (int i = 0; i <= dayOfMonth; i++) {
+        for (int i = 0; i < dayOfMonth; i++) {
             pushMatrix();
             translate(centerPositionX, centerPositionY);
             rotate(DAY_ROTATION * i);
@@ -216,7 +231,6 @@ public class FinancialProjection extends PApplet {
     }
 
     private void drawSpendingGraphic() {
-        fill(255, 255, 255);
         pushMatrix();
         translate(centerPositionX, centerPositionY);
         scale(SCALE);

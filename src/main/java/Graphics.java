@@ -8,7 +8,7 @@ import java.util.List;
 public class Graphics extends PApplet {
 
     private static float CLOCK_RADIUS = FinancialProjection.CLOCK_RADIUS;
-    private static float CLOCK_CENTER_RADIUS = FinancialProjection.CLOCK_CENTER_RADIUS;
+    private static float CLOCK_CENTER_RADIUS = FinancialProjection.CLOCK_CENTER_DIAMETER/2;
     private static float DAY_ROTATION = FinancialProjection.DAY_ROTATION;
 
     public static PShape createSpendingGraphic(FinancialData financialData, PShape graphics) {
