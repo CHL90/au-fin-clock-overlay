@@ -1,3 +1,5 @@
+import processing.core.PApplet;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,12 +32,13 @@ public class FinancialData {
         }
     }
 
-    public void updateCSVData() {
+    public void updateCSVData(FinancialProjection projection) {
         if (System.currentTimeMillis() - updateDataTimer > UPDATE_DATA_INTERVAL) {
             updateDataTimer = System.currentTimeMillis(); // Reset timer
             String csv = Network.getCSVData("chr-lor");
             financialData.clear();
             loadCSVData(csv);
+            projection.createSpendingGraphic();
         }
     }
 
@@ -45,6 +48,14 @@ public class FinancialData {
 
     public List<DataEntry> getFinancialDataList() {
         return financialData;
+    }
+
+    public int getTotalSpending() {
+        int total = 0;
+        for (DataEntry entry : financialData) {
+            total += entry.getAmount();
+        }
+        return total;
     }
 
     public class DataEntry {

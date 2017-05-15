@@ -26,7 +26,7 @@ public class FinancialProjection extends PApplet {
     // Network communication
     private String currentCommand;
     private boolean watchActive = true;
-    private final boolean ONLINE_MODE = true;
+    private final boolean ONLINE_MODE = false;
 
     // Text and animation
     private List<String> finDataTextList = new ArrayList<>();
@@ -74,12 +74,8 @@ public class FinancialProjection extends PApplet {
         dayLine = createShape();
         dayLine = Graphics.createDayLine(dayLine);
 
-        // Draw graphics into spending lines shape
-        fill(255, 153, 0, 128);
-        stroke(255, 153, 0);
-        strokeWeight(1f);
-        spendingLines = createShape();
-        spendingLines = Graphics.createSpendingGraphic(finData, spendingLines);
+        // Create spending graphics
+        createSpendingGraphic();
 
         /* This method should be called by the clock to update the text displayed in the center. Default 0 to display
            nothing on start up. */
@@ -88,7 +84,7 @@ public class FinancialProjection extends PApplet {
 
     public void draw() {
         background(0);
-        finData.updateCSVData(); // Check for new csv data
+        finData.updateCSVData(this); // Check for new csv data
         delay(watchActive ? 0 : 500);
 
         if (ONLINE_MODE) {
@@ -132,6 +128,16 @@ public class FinancialProjection extends PApplet {
             drawCenter();
             drawCenterText();
         }
+    }
+
+    public void createSpendingGraphic() {
+        int totalSpending = finData.getTotalSpending();
+        int[] graphicColor = Graphics.getSpendingGraphicColor(Math.abs(totalSpending), finData.getDisposableIncome());
+        fill(graphicColor[0], graphicColor[1], graphicColor[2], 128);
+        stroke(255, 255, 255);
+        strokeWeight(1.5f);
+        spendingLines = createShape();
+        spendingLines = Graphics.createSpendingGraphic(finData, spendingLines);
     }
 
     private void drawCenterText() {

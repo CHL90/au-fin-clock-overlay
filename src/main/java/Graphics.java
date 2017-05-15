@@ -2,6 +2,7 @@ import processing.core.PApplet;
 import processing.core.PShape;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,6 +62,24 @@ public class Graphics extends PApplet {
         dayLine.vertex(0, -CLOCK_RADIUS);
         dayLine.endShape();
         return dayLine;
+    }
+
+    public static int[] getSpendingGraphicColor(int amountSpent, int disposableIncome) {
+        double idealSpending = ( (double) disposableIncome / 30) * LocalDateTime.now().getDayOfMonth();
+        double veryLow = idealSpending * 0.75;
+        double low = idealSpending * 0.90;
+        double high = idealSpending * 1.1;
+        double veryHigh = idealSpending * 1.25;
+
+        int[] rgbArray = new int[]{255, 255, 255};
+
+        if (amountSpent <= veryLow) rgbArray = new int[]{0, 255, 0};
+        if (amountSpent < low && amountSpent > veryLow) rgbArray = new int[]{128, 255, 0};
+        if (amountSpent >= low && amountSpent <= high) rgbArray = new int[]{255, 255, 0};
+        if (amountSpent > high && amountSpent < veryHigh) rgbArray = new int[]{255, 128, 0};
+        if (amountSpent >= veryHigh) rgbArray = new int[]{255, 0, 0};
+
+        return rgbArray;
     }
 
     // Rotate a point around center (0,0)
