@@ -22,8 +22,8 @@
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpmime:4.5.2" level="project" />
     <orderEntry type="library" name="Maven: org.json:json:20160212" level="project" />
     <orderEntry type="library" name="Maven: org.processing:core:3.2.3" level="project" />
+    <orderEntry type="library" name="Maven: org.processing:net:3.2.3" level="project" />
     <orderEntry type="library" name="Maven: com.opencsv:opencsv:3.3" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.3.2" level="project" />
-    <orderEntry type="library" name="Maven: org.processing:net:3.2.3" level="project" />
   </component>
 </module>

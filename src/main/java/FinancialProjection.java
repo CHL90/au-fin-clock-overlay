@@ -26,7 +26,7 @@ public class FinancialProjection extends PApplet {
     // Network communication
     private String currentCommand;
     private boolean watchActive = true;
-    private final boolean ONLINE_MODE = false;
+    private static boolean ONLINE_MODE;
 
     // Text and animation
     private List<String> finDataTextList = new ArrayList<>();
@@ -45,8 +45,8 @@ public class FinancialProjection extends PApplet {
 
             int disposableIncome = Integer.parseInt(args[0]);
             String csv = Network.getCSVData(args[1]);
-
             finData = new FinancialData(disposableIncome, csv);
+            ONLINE_MODE = Boolean.parseBoolean(args[2]);
 
         }
         PApplet.main("FinancialProjection", args);
@@ -65,8 +65,8 @@ public class FinancialProjection extends PApplet {
             Network.createTCPConnection(this, "192.168.43.60", 1337);
             Network.initTimers(millis());
         }
-        //PFont merriWeather = createFont("MerriweatherSans-Bold.ttf", 32);
-        //textFont(merriWeather);
+        PFont merriWeather = createFont("MerriweatherSans-Bold.ttf", 32);
+        textFont(merriWeather);
 
         // Create custom line that represents one day
         stroke(255);
@@ -165,7 +165,7 @@ public class FinancialProjection extends PApplet {
         }
 
         if (finDataTextList.isEmpty()) {
-            fadeInText("No Transactions");
+            fadeInText("No\nTransactions");
         } else if (finDataTextList.size() == 1) {
             fadeInText(finDataTextList.get(0));
         } else {
@@ -188,7 +188,7 @@ public class FinancialProjection extends PApplet {
 
     private void fadeInText(String text) {
         textTransparency += fade;
-        fill(0, textTransparency);
+        fill(255, textTransparency);
         text(text, centerPositionX, centerPositionY);
     }
 
