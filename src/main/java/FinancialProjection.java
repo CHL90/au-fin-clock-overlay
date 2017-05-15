@@ -1,13 +1,17 @@
 import org.apache.commons.lang3.StringUtils;
 import processing.core.PApplet;
 import processing.core.PFont;
+import processing.core.PGraphics;
 import processing.core.PShape;
 import java.util.ArrayList;
 import java.util.List;
+import deadpixel.keystone.*;
 
 public class FinancialProjection extends PApplet {
 
     // Setup and calibration
+    private final int width = 1280;
+    private final int height = 800;
     private int centerPositionX;
     private int centerPositionY;
     private final int CALIBRATION_SPEED_HIGH = 20;
@@ -33,8 +37,13 @@ public class FinancialProjection extends PApplet {
     private int transactionNumber = 0; // Transaction being inspected
     private int dayOfMonth;
     private boolean displayDayMsg = true;
+    private final int BLACK = 0;
 
     // Custom shapes
+    Keystone ks;
+    CornerPinSurface pinSurface;
+    PGraphics offscreen;
+
     private PShape dayLine;
     private PShape spendingLines;
 
@@ -52,10 +61,10 @@ public class FinancialProjection extends PApplet {
     }
 
     public void settings() {
-        //fullScreen();
-        size(800, 600, P3D);
-        centerPositionX = displayWidth/2;
-        centerPositionY = displayHeight/2;
+        fullScreen(P3D);
+        centerPositionX = width/2;
+        centerPositionY = height/2;
+        smooth(4);
     }
 
     public void setup() {
@@ -67,9 +76,14 @@ public class FinancialProjection extends PApplet {
         PFont merriWeather = createFont("MerriweatherSans-Bold.ttf", 32);
         textFont(merriWeather);
 
+        // Keystone setup
+        ks = new Keystone(this);
+        pinSurface = ks.createCornerPinSurface(width, height, 20);
+        offscreen = createGraphics(width, height, P2D);
+
         // Create custom line that represents one day
         stroke(255);
-        strokeWeight(1f);
+        strokeWeight(3f);
         dayLine = createShape();
         dayLine = Graphics.createDayLine(dayLine);
 
@@ -82,7 +96,8 @@ public class FinancialProjection extends PApplet {
     }
 
     public void draw() {
-        background(0);
+        background(255);
+
         finData.updateCSVData(this); // Check for new csv data
         delay(watchActive ? 0 : 500);
 
@@ -122,10 +137,14 @@ public class FinancialProjection extends PApplet {
         }
 
         if (watchActive) {
-            drawDayLines(30);
+            offscreen.beginDraw();
+            offscreen.background(BLACK);
             drawSpendingGraphic();
+            drawDayLines(30);
             drawCenter();
             drawCenterText();
+            offscreen.endDraw();
+            pinSurface.render(offscreen);
         }
     }
 
@@ -134,7 +153,7 @@ public class FinancialProjection extends PApplet {
         int[] graphicColor = Graphics.getSpendingGraphicColor(Math.abs(totalSpending), finData.getDisposableIncome());
         fill(graphicColor[0], graphicColor[1], graphicColor[2], 128);
         stroke(255, 255, 255);
-        strokeWeight(1.5f);
+        strokeWeight(3f);
         spendingLines = createShape();
         spendingLines = Graphics.createSpendingGraphic(finData, spendingLines);
     }
@@ -145,9 +164,9 @@ public class FinancialProjection extends PApplet {
         if (dayOfMonth == 0) return;
 
         // Set text options
-        textSize(12 * SCALE);
-        fill(255, 255, 255);
-        textAlign(CENTER);
+        offscreen.textSize(12 * SCALE);
+        offscreen.fill(255, 255, 255);
+        offscreen.textAlign(CENTER);
 
         if (displayDayMsg) {
             // Fade out effect
@@ -158,8 +177,8 @@ public class FinancialProjection extends PApplet {
                 fade = FADING_SPEED;
             }
 
-            fill(255, textTransparency);
-            text("Day " + dayOfMonth, centerPositionX, centerPositionY);
+            offscreen.fill(255, textTransparency);
+            offscreen.text("Day " + dayOfMonth, centerPositionX, centerPositionY);
             return;
         }
 
@@ -180,15 +199,15 @@ public class FinancialProjection extends PApplet {
                 transactionNumber = transactionNumber % finDataTextList.size();
             }
 
-            fill(255, textTransparency);
-            text(finDataTextList.get(transactionNumber), centerPositionX, centerPositionY);
+            offscreen.fill(255, textTransparency);
+            offscreen.text(finDataTextList.get(transactionNumber), centerPositionX, centerPositionY);
         }
     }
 
     private void fadeInText(String text) {
         textTransparency += fade;
-        fill(255, textTransparency);
-        text(text, centerPositionX, centerPositionY);
+        offscreen.fill(255, textTransparency);
+        offscreen.text(text, centerPositionX, centerPositionY);
     }
 
     private void setCenterText(int dayOfMonth) {
@@ -214,14 +233,14 @@ public class FinancialProjection extends PApplet {
     }
 
     private void drawCenter() {
-        stroke(255);
-        strokeWeight(2f);
-        fill(0, 0, 0);
-        pushMatrix();
-        translate(centerPositionX, centerPositionY);
-        scale(SCALE);
-        ellipse(0, 0, CLOCK_CENTER_DIAMETER, CLOCK_CENTER_DIAMETER);
-        popMatrix();
+        offscreen.stroke(255);
+        offscreen.strokeWeight(1.5f);
+        offscreen.fill(BLACK);
+        offscreen.pushMatrix();
+        offscreen.translate(centerPositionX, centerPositionY);
+        offscreen.scale(SCALE);
+        offscreen.ellipse(0, 0, CLOCK_CENTER_DIAMETER, CLOCK_CENTER_DIAMETER);
+        offscreen.popMatrix();
     }
 
     private void drawDayLines(int dayOfMonth) {
@@ -248,15 +267,20 @@ public class FinancialProjection extends PApplet {
 
         // 1: scale up 2: scale down 3: reset scale 4: reset position
         switch (key) {
-            case '1': SCALE += 0.1f;
+            case '1':
+                SCALE += 0.1f;
                 break;
-            case '2': SCALE -= 0.1f;
+            case '2':
+                SCALE -= 0.1f;
                 break;
-            case '3': SCALE = 1.0f;
+            case '3':
+                SCALE = 1.0f;
                 break;
             case '4':
                 centerPositionX = width/2;
                 centerPositionY = height/2;
+                break;
+            case 'c': ks.toggleCalibration();
                 break;
         }
 

@@ -66,13 +66,13 @@ public class Graphics extends PApplet {
         for (Point point : points) {
             graphics.vertex(point.x, point.y);
         }
-        graphics.endShape();
+        graphics.endShape(CLOSE);
 
         return graphics;
     }
 
     public static PShape createDayLine(PShape dayLine) {
-        dayLine.beginShape();
+        dayLine.beginShape(LINES);
         dayLine.vertex(0, 0);
         dayLine.vertex(0, -CLOCK_RADIUS);
         dayLine.endShape();
