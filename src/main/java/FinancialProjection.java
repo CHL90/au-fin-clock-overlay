@@ -8,8 +8,6 @@ import java.util.List;
 public class FinancialProjection extends PApplet {
 
     // Setup and calibration
-    //private final int width = 600;
-    //private final int height = 400;
     private int centerPositionX;
     private int centerPositionY;
     private final int CALIBRATION_SPEED_HIGH = 20;
@@ -19,7 +17,7 @@ public class FinancialProjection extends PApplet {
     public static float CLOCK_RADIUS = 150;
     public static float CLOCK_CENTER_DIAMETER = 100;
     public static float DAY_ROTATION = TWO_PI/30;
-    private final int FADING_SPEED = 5;
+    private static int FADING_SPEED;
 
     private static FinancialData finData;
 
@@ -46,7 +44,8 @@ public class FinancialProjection extends PApplet {
             int disposableIncome = Integer.parseInt(args[0]);
             String csv = Network.getCSVData(args[1]);
             finData = new FinancialData(disposableIncome, csv);
-            ONLINE_MODE = Boolean.parseBoolean(args[2]);
+            FADING_SPEED = Integer.parseInt(args[2]);
+            ONLINE_MODE = Boolean.parseBoolean(args[3]);
 
         }
         PApplet.main("FinancialProjection", args);
@@ -56,7 +55,6 @@ public class FinancialProjection extends PApplet {
         fullScreen();
         centerPositionX = displayWidth/2;
         centerPositionY = displayHeight/2;
-        //size(width, height);
     }
 
     public void setup() {
