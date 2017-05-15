@@ -22,6 +22,8 @@ public class Graphics extends PApplet {
         points.add(new Point(0, 0));
         // Keep track of spending position. Center radius equals no spending while clock radius equals entire disposable income spent
         float spendingPosition = -CLOCK_CENTER_RADIUS;
+        int totalSpending = 0;
+        boolean withinBudget = true;
 
         for (int i = 1; i <= dayOfMonth + 1; i++) {
             float dailySpending = 0;
@@ -32,10 +34,23 @@ public class Graphics extends PApplet {
                     dailySpending += entry.getAmount();
                 }
             }
+            totalSpending += dailySpending;
 
             // Add points in relation to spending. When there is no daily spending just rotate current point.
             // When there is daily spending rotate current point and add another point further out according to spending
+
+            // Special case to handle when budget limit is passed
+            if (Math.abs(totalSpending) >= disposableIncome && withinBudget) {
+                Point sp = rotate2d(new Point(0, spendingPosition), (i - 1) * DAY_ROTATION);
+                points.add(sp);
+                withinBudget = false;
+                spendingPosition = -CLOCK_RADIUS;
+            }
+
             if (dailySpending == 0) {
+                Point currentSP = rotate2d(new Point(0, spendingPosition), (i - 1) * DAY_ROTATION);
+                points.add(currentSP);
+            } else if (Math.abs(totalSpending) >= disposableIncome) {
                 Point currentSP = rotate2d(new Point(0, spendingPosition), (i - 1) * DAY_ROTATION);
                 points.add(currentSP);
             } else {
