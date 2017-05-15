@@ -52,7 +52,8 @@ public class FinancialProjection extends PApplet {
     }
 
     public void settings() {
-        fullScreen();
+        //fullScreen();
+        size(800, 600, P3D);
         centerPositionX = displayWidth/2;
         centerPositionY = displayHeight/2;
     }
