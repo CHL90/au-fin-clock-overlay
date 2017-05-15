@@ -65,8 +65,8 @@ public class FinancialProjection extends PApplet {
             Network.createTCPConnection(this, "192.168.43.60", 1337);
             Network.initTimers(millis());
         }
-        PFont merriWeather = createFont("MerriweatherSans-Bold.ttf", 32);
-        textFont(merriWeather);
+        //PFont merriWeather = createFont("MerriweatherSans-Bold.ttf", 32);
+        //textFont(merriWeather);
 
         // Create custom line that represents one day
         stroke(255);
