@@ -25,6 +25,7 @@ public class FinancialProjection extends PApplet {
     private String currentCommand;
     private boolean watchActive = true;
     private static boolean ONLINE_MODE;
+    private static String csvName;
 
     // Text and animation
     private List<String> finDataTextList = new ArrayList<>();
@@ -41,6 +42,7 @@ public class FinancialProjection extends PApplet {
     public static void main(String[] args) {
         if(args.length > 0) {
 
+            csvName = args[1];
             int disposableIncome = Integer.parseInt(args[0]);
             String csv = Network.getCSVData(args[1]);
             finData = new FinancialData(disposableIncome, csv);
@@ -82,7 +84,7 @@ public class FinancialProjection extends PApplet {
 
     public void draw() {
         background(0);
-        finData.updateCSVData(this); // Check for new csv data
+        finData.updateCSVData(this, csvName); // Check for new csv data
         delay(watchActive ? 0 : 500);
 
         if (ONLINE_MODE) {

@@ -30,10 +30,10 @@ public class FinancialData {
         }
     }
 
-    public void updateCSVData(FinancialProjection projection) {
+    public void updateCSVData(FinancialProjection projection, String csvName) {
         if (System.currentTimeMillis() - updateDataTimer > UPDATE_DATA_INTERVAL) {
             updateDataTimer = System.currentTimeMillis(); // Reset timer
-            String csv = Network.getCSVData("chr-lor");
+            String csv = Network.getCSVData(csvName);
             financialData.clear();
             loadCSVData(csv);
             projection.createSpendingGraphic();
