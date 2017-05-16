@@ -60,7 +60,7 @@ public class FinancialProjection extends PApplet {
     public void setup() {
         if (ONLINE_MODE) {
             // Init tcp communication
-            Network.createTCPConnection(this, "192.168.43.60", 1337);
+            Network.createTCPConnection(this, "192.168.87.104", 1337);
             Network.initTimers(millis());
         }
         PFont merriWeather = createFont("MerriweatherSans-Bold.ttf", 32);
