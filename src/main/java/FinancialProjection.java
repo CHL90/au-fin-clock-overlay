@@ -10,8 +10,6 @@ import deadpixel.keystone.*;
 public class FinancialProjection extends PApplet {
 
     // Setup and calibration
-    private final int width = 1280;
-    private final int height = 800;
     private int centerPositionX;
     private int centerPositionY;
     private final int CALIBRATION_SPEED_HIGH = 20;
@@ -62,8 +60,8 @@ public class FinancialProjection extends PApplet {
 
     public void settings() {
         fullScreen(P3D);
-        centerPositionX = width/2;
-        centerPositionY = height/2;
+        centerPositionX = displayWidth/2;
+        centerPositionY = displayHeight/2;
         smooth(4);
     }
 
@@ -78,8 +76,8 @@ public class FinancialProjection extends PApplet {
 
         // Keystone setup
         ks = new Keystone(this);
-        pinSurface = ks.createCornerPinSurface(width, height, 20);
-        offscreen = createGraphics(width, height, P2D);
+        pinSurface = ks.createCornerPinSurface(displayWidth, displayHeight, 20);
+        offscreen = createGraphics(displayWidth, displayHeight, P2D);
 
         // Create custom line that represents one day
         stroke(255);
@@ -96,7 +94,7 @@ public class FinancialProjection extends PApplet {
     }
 
     public void draw() {
-        background(255);
+        background(0);
 
         finData.updateCSVData(this); // Check for new csv data
         delay(watchActive ? 0 : 500);
