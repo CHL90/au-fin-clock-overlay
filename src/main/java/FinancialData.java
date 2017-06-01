@@ -7,6 +7,7 @@ public class FinancialData {
     private int disposableIncome;
     private List<DataEntry> financialData = new ArrayList<>();
     private long updateDataTimer = System.currentTimeMillis();
+    private String SEPARATOR = ",";
 
     public FinancialData(int disposableIncome, String csvData) {
 
@@ -17,14 +18,19 @@ public class FinancialData {
     public void loadCSVData(String csvData) {
         String[] lines = csvData.split("\n");
         for (String line : lines) {
-            String[] entries = line.split(",\"");
+            //System.out.println(line);
+            String[] entries = line.split(SEPARATOR);
             for (int i = 0; i < entries.length; i++) {
                 entries[i] = entries[i].replaceAll("\"", "");
             }
-            float amount = Float.parseFloat(entries[2].replaceAll("\\.", "").replace(',', '.'));
+            float amount = Float.parseFloat(entries[3].replaceAll("\\.", "").replace(',', '.'));
             if (amount <= 0.0) {
                 String date = entries[0];
+                date = date.replaceAll("/", "\\.");
                 String text = entries[1];
+                System.out.print(date + " ");
+                System.out.print(text + " ");
+                System.out.println(amount);
                 financialData.add(new DataEntry(date, text, amount));
             }
         }

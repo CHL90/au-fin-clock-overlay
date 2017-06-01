@@ -30,7 +30,7 @@ public class Graphics extends PApplet {
 
             // Calculate amount spent on a given day
             for (FinancialData.DataEntry entry : finDataList) {
-                if (Integer.parseInt(entry.getDate().split("\\.")[0]) == i) {
+                if (Integer.parseInt(entry.getDate().split("\\.")[1]) == i) {
                     dailySpending += entry.getAmount();
                 }
             }

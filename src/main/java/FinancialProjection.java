@@ -76,7 +76,7 @@ public class FinancialProjection extends PApplet {
 
         /* This method should be called by the clock to update the text displayed in the center. Default 0 to display
            nothing on start up. */
-        setCenterText(1);
+        setCenterText(11);
     }
 
     public void draw() {
@@ -198,7 +198,7 @@ public class FinancialProjection extends PApplet {
         finDataTextList.clear();
 
         for (FinancialData.DataEntry entry : finDataList) {
-            if (Integer.parseInt(entry.getDate().split("\\.")[0]) == dayOfMonth) {
+            if (Integer.parseInt(entry.getDate().split("\\.")[1]) == dayOfMonth) {
                 String text = StringUtils.substring(entry.getText(), 0, 10);
                 finDataTextList.add(text + "\n" + entry.getAmount());
             }
