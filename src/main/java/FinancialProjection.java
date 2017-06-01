@@ -40,16 +40,13 @@ public class FinancialProjection extends PApplet {
     private PShape spendingLines;
 
     public static void main(String[] args) {
-        if(args.length > 0) {
-
-            csvName = args[1];
-            int disposableIncome = Integer.parseInt(args[0]);
-            String csv = Network.getCSVData(args[1]);
-            finData = new FinancialData(disposableIncome, csv);
-            FADING_SPEED = Integer.parseInt(args[2]);
-            ONLINE_MODE = Boolean.parseBoolean(args[3]);
-
-        }
+        csvName = System.getenv("CSV_DATA");
+        int disposableIncome = Integer.parseInt(System.getenv("BUDGET"));
+        String csv = Network.getCSVData(csvName);
+        finData = new FinancialData(disposableIncome, csv);
+        FADING_SPEED = Integer.parseInt(System.getenv("FADE"));
+        ONLINE_MODE = Boolean.parseBoolean(System.getenv("ONLINE"));
+        Network.clockTCPAddress = System.getenv("TCP");
         PApplet.main("FinancialProjection", args);
     }
 
@@ -62,7 +59,7 @@ public class FinancialProjection extends PApplet {
     public void setup() {
         if (ONLINE_MODE) {
             // Init tcp communication
-            Network.createTCPConnection(this, "192.168.87.104", 1337);
+            Network.createTCPConnection(this, Network.clockTCPAddress, 1337);
             Network.initTimers(millis());
         }
         PFont merriWeather = createFont("MerriweatherSans-Bold.ttf", 32);
@@ -79,7 +76,7 @@ public class FinancialProjection extends PApplet {
 
         /* This method should be called by the clock to update the text displayed in the center. Default 0 to display
            nothing on start up. */
-        setCenterText(11);
+        setCenterText(1);
     }
 
     public void draw() {

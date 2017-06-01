@@ -11,6 +11,7 @@ import java.net.SocketAddress;
 public class Network extends PApplet {
 
     private static Client client;
+    public static String clockTCPAddress;
     private static float serverAvailabilityTimer;
     private static float reconnectTimer;
 
@@ -60,7 +61,7 @@ public class Network extends PApplet {
             client.dispose();
             Socket s = null;
             try {
-                SocketAddress sa = new InetSocketAddress("192.168.87.104", 1337);
+                SocketAddress sa = new InetSocketAddress(clockTCPAddress, 1337);
                 s = new Socket();
                 s.connect(sa, 1500); // Timeout set to 1500 milliseconds
                 createTCPConnection(parent, s);
